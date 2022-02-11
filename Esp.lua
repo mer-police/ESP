@@ -1,21 +1,18 @@
+--Settings--
 local ESP = {
     Enabled = false,
-    Boxes = false,
+    Boxes = true,
     BoxShift = CFrame.new(0,-1.5,0),
 	BoxSize = Vector3.new(4,6,0),
-    Color = Color3.fromRGB(5, 135, 250),
-    FaceCamera = true,
-    Names = false,
+    Color = Color3.fromRGB(255, 170, 0),
+    FaceCamera = false,
+    Names = true,
     TeamColor = true,
     Thickness = 2,
-    Font = 1,
     AttachShift = 1,
-    TeamMates = false,
+    TeamMates = true,
     Players = true,
-    Health = true,
-    PrimaryPart = "HumanoidRootPart",
     
-    CharacterList = {},
     Objects = setmetatable({}, {__mode="kv"}),
     Overrides = {}
 }
@@ -80,12 +77,6 @@ function ESP:Toggle(bool)
     self.Enabled = bool
     if not bool then
         for i,v in pairs(self.Objects) do
-            for i,part in pairs(v.PrimaryPart.Parent:GetChildren()) do
-                if part:IsA("BasePart") then
-                    local a = part:FindFirstChild("BoxHandleAdornment")
-                    if a then a:Destroy() end
-                end
-            end
             if v.Type == "Box" then --fov circle etc
                 if v.Temporary then
                     v:Remove()
@@ -235,24 +226,12 @@ function boxBase:Update()
             self.Components.Name.Visible = true
             self.Components.Name.Position = Vector2.new(TagPos.X, TagPos.Y)
             self.Components.Name.Text = self.Name
-            self.Components.Name.Font = ESP.Font
             self.Components.Name.Color = color
             
             self.Components.Distance.Visible = true
-            self.Components.Distance.Font = ESP.Font
             self.Components.Distance.Position = Vector2.new(TagPos.X, TagPos.Y + 14)
-            if ESP.Health then
-                if self.PrimaryPart.Parent:FindFirstChildOfClass("Humanoid") then 
-                    self.Components.Distance.Text = "[".. math.floor((cam.CFrame.p - cf.p).magnitude).. "m]".. "[".. tostring(math.round(self.PrimaryPart.Parent:FindFirstChildOfClass("Humanoid").Health)).. "%]"
-                elseif self.PrimaryPart.Parent:FindFirstChild("Health") then 
-                    self.Components.Distance.Text = "[".. math.floor((cam.CFrame.p - cf.p).magnitude).. "m]".. "[".. tostring(math.round(self.PrimaryPart.Parent.Health.Value)).. "%]"
-		        else
-		            self.Components.Distance.Text = "[".. math.floor((cam.CFrame.p - cf.p).magnitude).. "m]"
-                end
-            else
-                self.Components.Distance.Text = "[".. math.floor((cam.CFrame.p - cf.p).magnitude).. "m]"
-            end
-            self.Components.Distance.Color = Color3.fromRGB(255,255,255)
+            self.Components.Distance.Text = math.floor((cam.CFrame.p - cf.p).magnitude) .."m away"
+            self.Components.Distance.Color = color
         else
             self.Components.Name.Visible = false
             self.Components.Distance.Visible = false
@@ -276,20 +255,6 @@ function boxBase:Update()
     else
         self.Components.Tracer.Visible = false
     end
-    
-    if game.PlaceId ~= 2317712696 then
-        for i,part in pairs(self.PrimaryPart.Parent:GetChildren()) do
-            if part:IsA("BasePart") and part ~= self.PrimaryPart then
-                local a = part:FindFirstChild("BoxHandleAdornment") or Instance.new("BoxHandleAdornment", part)
-                a.Adornee = part; a.AlwaysOnTop = true; a.ZIndex = 10; a.Size = part.Size; a.Color = BrickColor.new(color)
-                if (ESP.Chams and ESP.Enabled) then
-                    a.Transparency = 0.5 
-                else
-                    a.Transparency = 1
-                end
-            end
-        end
-    end
 end
 
 function ESP:Add(obj, options)
@@ -304,7 +269,7 @@ function ESP:Add(obj, options)
         Size = options.Size or self.BoxSize,
         Object = obj,
         Player = options.Player or plrs:GetPlayerFromCharacter(obj),
-        PrimaryPart = options.PrimaryPart or obj.ClassName == "Model" and obj:FindFirstChild(ESP.PrimaryPart) or (obj.PrimaryPart or obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChildWhichIsA("BasePart")) or obj:IsA("BasePart") and obj,
+        PrimaryPart = options.PrimaryPart or obj.ClassName == "Model" and (obj.PrimaryPart or obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChildWhichIsA("BasePart")) or obj:IsA("BasePart") and obj,
         Components = {},
         IsEnabled = options.IsEnabled,
         Temporary = options.Temporary,
@@ -364,7 +329,7 @@ function ESP:Add(obj, options)
             if ESP.AutoRemove ~= false then
                 box:Remove()
             end
-	end)
+		end)
     end
 
     return box
@@ -372,13 +337,10 @@ end
 
 local function CharAdded(char)
     local p = plrs:GetPlayerFromCharacter(char)
-    game:GetService("RunService").Stepped:Wait()
-    
     if not char:FindFirstChild("HumanoidRootPart") then
         local ev
         ev = char.ChildAdded:Connect(function(c)
             if c.Name == "HumanoidRootPart" then
-                table.insert(ESP.CharacterList, char)
                 ev:Disconnect()
                 ESP:Add(char, {
                     Name = p.Name,
@@ -388,7 +350,6 @@ local function CharAdded(char)
             end
         end)
     else
-        table.insert(ESP.CharacterList, char)
         ESP:Add(char, {
             Name = p.Name,
             Player = p,
@@ -418,6 +379,5 @@ game:GetService("RunService").RenderStepped:Connect(function()
         end
     end
 end)
-
 
 return ESP
